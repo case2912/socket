@@ -1,0 +1,72 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <script src="https://unpkg.com/grimoirejs-preset-basic/register/grimoire-preset-basic.js"></script>
+  <script src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
+  <style type="text/css">
+    html {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+    }
+
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+    }
+  </style>
+  <script type="text/javascript">
+    var socket = io('http://10.0.1.54:3000');
+  </script>
+</head>
+
+<body>
+  <script id="main" type="text/goml">
+    <goml>
+      <renderer>
+        <render-quad material="new(unlit)" texture="texcoord.png"></render-quad>
+      </renderer>
+    </goml>
+  </script>
+  <script type="text/javascript">
+    socket.on('connect', function() {
+      !(function() {
+        function TouchEventHandler(event) {
+          event.preventDefault();
+          const p = [
+            0.1 * Math.floor(10 * event.changedTouches[0].clientX / document.body.clientWidth),
+            0.1 * Math.floor(10 * event.changedTouches[0].clientY / document.body.clientHeight)
+          ]
+          socket.emit('positionFromClient', {
+            position_x: p[0],
+            position_y: p[1]
+          });
+        }
+        document.body.addEventListener("touchstart", TouchEventHandler);
+        document.body.addEventListener("touchmove", TouchEventHandler);
+        document.body.addEventListener("touchend", TouchEventHandler);
+      })();
+      !(() => {
+        window.addEventListener("deviceorientation", deviceorientationHandler);
+
+        function deviceorientationHandler(event) {
+          const r = [
+            event.beta,
+            event.gamma,
+            event.alpha
+          ]
+          socket.emit('rotationFromClient', {
+            rotation_x: r[0],
+            rotation_y: r[1],
+            rotation_z: r[2]
+          });
+        }
+      })();
+    });
+  </script>
+</body>
+
+</html>
