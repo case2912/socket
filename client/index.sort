@@ -1,0 +1,31 @@
+@Pass {
+  @BlendFunc(ONE, ONE);
+  FS_PREC(mediump, float) varying vec2 vTexcoord;
+#ifdef VS
+  attribute vec2 texcoord;
+  attribute vec3 position;
+  void main() {
+    gl_Position = vec4(position, 1);
+    vTexcoord = vec2(texcoord.x, 1. - texcoord.y);
+  }
+#endif
+#ifdef FS
+  @{type : "vec2", default : "0, 0"};
+  uniform vec2 p;
+  @{type : "vec2", default : "0, 0"};
+  uniform vec2 start_p;
+  @{type : "bool", default : "false"};
+  uniform bool touch;
+  uniform vec2 _viewportSize;
+  void main() {
+    vec2 vSize = _viewportSize.yx / min(_viewportSize.x, _viewportSize.y);
+    if (touch == true && length((p - vTexcoord) / vSize) < 0.1) {
+      gl_FragColor = vec4(1., 1., 1., 1.);
+    } else if (touch == true && length((start_p - vTexcoord) / vSize) < 0.1) {
+      gl_FragColor = vec4(1., 0., 1., 1.);
+    } else {
+      gl_FragColor = vec4(0., 1., 1., 1.);
+    }
+  }
+#endif
+}

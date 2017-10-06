@@ -1,0 +1,114 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <script src="https://unpkg.com/grimoirejs-preset-basic/register/grimoire-preset-basic.js"></script>
+  <script src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
+  <style type="text/css">
+    html {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+    }
+
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+    }
+  </style>
+  <script type="text/javascript">
+    var socket = io('http://10.0.1.54:3000');
+  </script>
+</head>
+
+<body>
+  <script id="main" type="text/goml">
+    <goml>
+      <import-material typeName="mat" src="index.sort"></import-material>
+      <renderer>
+        <render-quad material="new(mat)" color="gray"></render-quad>
+      </renderer>
+    </goml>
+  </script>
+  <script type="text/javascript">
+    socket.on('connect', function() {
+      const cdata = {
+        start_px: null,
+        start_py: null,
+        px: null,
+        py: null,
+        alpha: null,
+        beta: null,
+        gamma: null,
+        touch: false
+      };
+      !(function() {
+        function TouchStartHandler(event) {
+          event.preventDefault();
+          const px = event.changedTouches[0].clientX / document.body.clientWidth;
+          const py = 1 - Math.max(0, event.changedTouches[0].clientY / document.body.clientHeight);
+          cdata.px = px;
+          cdata.py = py;
+          cdata.start_px = px;
+          cdata.start_py = py;
+          cdata.touch = true;
+          socket.emit('dataFromClient', cdata);
+          gr("#main")("render-quad").setAttribute("p", [px, py])
+          gr("#main")("render-quad").setAttribute("start_p", [px, py])
+          gr("#main")("render-quad").setAttribute("touch", cdata.touch)
+        }
+
+        function TouchMoveHandler(event) {
+          event.preventDefault();
+          const px = event.changedTouches[0].clientX / document.body.clientWidth;
+          const py = 1 - Math.max(0, event.changedTouches[0].clientY / document.body.clientHeight);
+          if (cdata.px !== px || cdata.py !== py) {
+            cdata.px = px;
+            cdata.py = py;
+            socket.emit('dataFromClient', cdata);
+            gr("#main")("render-quad").setAttribute("p", [px, py])
+          }
+        }
+
+        function TouchEndHandler(event) {
+          event.preventDefault();
+          cdata.px = null;
+          cdata.py = null;
+          cdata.start_px = null;
+          cdata.start_py = null;
+          cdata.touch = false;
+          socket.emit('dataFromClient', cdata);
+          gr("#main")("render-quad").setAttribute("touch", cdata.touch)
+        }
+        document.body.addEventListener("touchstart", TouchStartHandler);
+        document.body.addEventListener("touchmove", TouchMoveHandler);
+        document.body.addEventListener("touchend", TouchEndHandler);
+      })();
+      !(function() {
+        window.addEventListener("deviceorientation", deviceorientationHandler);
+
+        function deviceorientationHandler(event) {
+          if (cdata.alpha !== event.alpha || cdata.beta !== event.beta || cdata.gamma !== event.gamma) {
+            cdata.alpha = Math.floor(event.alpha);
+            cdata.beta = Math.floor(event.beta);
+            cdata.gamma = Math.floor(event.gamma);
+            socket.emit('dataFromClient', cdata);
+          }
+        }
+      })();
+      !(function() {
+        window.addEventListener("devicemotion", devicemotionHandler);
+
+        function devicemotionHandler(event) {
+          var x = event.acceleration.x;
+          var y = event.acceleration.y;
+          var z = event.acceleration.z;
+        }
+      })();
+    });
+  </script>
+</body>
+
+</html>
